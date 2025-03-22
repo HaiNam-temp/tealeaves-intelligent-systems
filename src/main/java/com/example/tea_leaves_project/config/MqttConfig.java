@@ -1,10 +1,15 @@
 package com.example.tea_leaves_project.config;
 
+import com.example.tea_leaves_project.Payload.Response.QrResponse;
+import com.example.tea_leaves_project.Service.helper.QRServiceHelper;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.paho.client.mqttv3.IMqttClient;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.annotation.ServiceActivator;
@@ -37,7 +42,8 @@ public class MqttConfig {
 //        }
 //        return instance;
 //    }
-
+    @Autowired
+    QRServiceHelper qrServiceHelper;
     @Bean
     public MessageChannel mqttInputChannel() {
         return new DirectChannel();
@@ -70,6 +76,7 @@ public class MqttConfig {
         return adapter;
     }
 
+
     // hàm subscribe topic qrcode từ mqtt
     @Bean
     @ServiceActivator(inputChannel = "mqttInputChannel")
@@ -79,6 +86,20 @@ public class MqttConfig {
             @Override
             public void handleMessage(Message<?> message) throws MessagingException {
                 log.info((String) message.getPayload());
+                QrResponse qrResponse = new QrResponse();
+                try {
+                    String payload = (String) message.getPayload();
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    JsonNode jsonNode = objectMapper.readTree(payload);
+
+                    // Lấy giá trị của qr_code
+                    String qrCode = jsonNode.get("qr_code").asText();
+                    log.info("QR Code: " + qrCode);
+                    qrServiceHelper.unpack(qrCode, qrResponse);
+                } catch (Exception e) {
+                    log.error("Lỗi scan qrcode " + e.getMessage());
+                }
+
             }
         };
     }

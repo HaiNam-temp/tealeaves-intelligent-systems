@@ -26,10 +26,10 @@ public class LoginController {
         return ResponseEntity.ok(responseData);
     }
     @GetMapping("/signin")
-    public ResponseEntity<ResponseData> authUser(@RequestBody SigninRequest signinRequest) {
+    public ResponseEntity<ResponseData> authUser(@RequestParam String email, @RequestParam String password) {
         ResponseData responseData = ResponseData.resp();
-        String email=signinRequest.getEmail();
-        String password=signinRequest.getPassword();
+//        String email=signinRequest.getEmail();
+//        String password=signinRequest.getPassword();
         String token=loginService.authUser(email,password);
         responseData.setData(token);
         return ResponseEntity.ok(responseData);

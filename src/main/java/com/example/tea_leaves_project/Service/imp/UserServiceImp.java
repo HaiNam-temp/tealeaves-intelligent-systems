@@ -60,7 +60,7 @@ public class UserServiceImp implements UserService {
         if (user == null) {
             throw ApiException.ErrBadCredentials().build();
         }
-        List<Package> packageList = packageRepository.findByUser(user);
+        List<Package> packageList = packageRepository.findByUserOrderByPackageidDesc(user);
         List<PackageDto> packageDtoList = new ArrayList<>();
 
         for (Package p : packageList) {

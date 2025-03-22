@@ -12,6 +12,7 @@ import com.example.tea_leaves_project.Payload.ResponseData;
 import com.example.tea_leaves_project.Responsitory.PackageRepository;
 import com.example.tea_leaves_project.Responsitory.WarehouseRepository;
 import com.example.tea_leaves_project.Service.WarehouseService;
+import com.example.tea_leaves_project.Service.helper.QRServiceHelper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -29,7 +30,8 @@ public class WarehouseServiceImp implements WarehouseService {
     WarehouseRepository warehouseRepository;
     @Autowired
     PackageRepository packageRepository;
-
+    @Autowired
+    QRServiceHelper qrServiceHelper;
     // tính số bao chè sẵn sàng vận chuyển
     public long calculateTotalPackage(Warehouse warehouse) {
         long sum = 0;
@@ -93,20 +95,22 @@ public class WarehouseServiceImp implements WarehouseService {
         return warehousePackageDto;
     }
     @Override
-    public String scanQrCode(long packageid) {
-        Package p = packageRepository.findByPackageid(packageid);
+    public QrResponse scanQrCode(String qrcode) {
+        QrResponse qrres= new QrResponse();
+        QrResponse qrResponse = qrServiceHelper.unpack(qrcode,qrres);
+        Package p = packageRepository.findByPackageid(qrResponse.getPackageid());
         if (p == null) {
             throw ApiException.ErrDataLoss().build();
         }
         if (p.getStatus().equals("Weighn't yet")) {
             p.setStatus("Scanned");
             packageRepository.save(p);
-            return "Scan thành công";
+           qrResponse.setMessage("Quét thành công");
         }
         if (p.getStatus().equals("Scanned") || p.getStatus().equals("Wait delivery")) {
-            return "Sản phẩm đã được quét";
+            qrResponse.setMessage("Sản phẩm đã được quét");
         }
-        return "Quét thất bại";
+        return qrResponse;
     }
 
     @Override

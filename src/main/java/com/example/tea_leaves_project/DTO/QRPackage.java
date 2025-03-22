@@ -6,7 +6,6 @@ import lombok.Data;
 @Builder
 @Data
 public class QRPackage {
-
     private PackageDto packageDto;
     private String qrData;
 }
