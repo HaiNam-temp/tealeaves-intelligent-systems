@@ -19,9 +19,7 @@ import org.springframework.stereotype.Service;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -72,7 +70,6 @@ public class WarehouseServiceImp implements WarehouseService {
 
         List<Package> plist = packageRepository.findByWarehouse(warehouse);
         List<PackageDto> packageDtoList = new ArrayList<>();
-
         for (Package p : plist) {
 
             PackageDto packageDto = PackageDto.builder()
@@ -88,6 +85,9 @@ public class WarehouseServiceImp implements WarehouseService {
                     .build();
             packageDtoList.add(packageDto);
         }
+        // sắp xếp giảm dần
+        Collections.sort(packageDtoList,(p1,p2) ->p1.getPackageId()>p2.getPackageId()? -1 : 1 );
+
         WarehousePackageDto warehousePackageDto = WarehousePackageDto.builder()
                 .warehouseid(warehouseid)
                 .name(warehouse.getName())
@@ -98,16 +98,17 @@ public class WarehouseServiceImp implements WarehouseService {
     public QrResponse scanQrCode(String qrcode) {
         QrResponse qrres= new QrResponse();
         QrResponse qrResponse = qrServiceHelper.unpack(qrcode,qrres);
+        System.out.println(qrResponse.getPackageid());
         Package p = packageRepository.findByPackageid(qrResponse.getPackageid());
         if (p == null) {
             throw ApiException.ErrDataLoss().build();
         }
-        if (p.getStatus().equals("Weighn't yet")) {
-            p.setStatus("Scanned");
+        if (p.getStatus().equals("Chưa cân")) {
+            p.setStatus("Đã quét");
             packageRepository.save(p);
            qrResponse.setMessage("Quét thành công");
         }
-        if (p.getStatus().equals("Scanned") || p.getStatus().equals("Wait delivery")) {
+        if (p.getStatus().equals("Đã quét") || p.getStatus().equals("Chờ vận chuyển")) {
             qrResponse.setMessage("Sản phẩm đã được quét");
         }
         return qrResponse;
@@ -127,7 +128,7 @@ public class WarehouseServiceImp implements WarehouseService {
         if (warehouse == null) {
             throw ApiException.ErrDataLoss().build();
         }
-        List<Package> p = packageRepository.findByStatusAndWarehouse("Scanned", warehouse);
+        List<Package> p = packageRepository.findByStatusAndWarehouse("Đã quét", warehouse);
         if (p.size() == 0) {
             responseData.setMessage("Không tìm thấy bao scan gần nhất");
             System.out.println("Không tìm thấy bao scan gần nhất");
@@ -135,15 +136,12 @@ public class WarehouseServiceImp implements WarehouseService {
         }
         if (p.size() > 1) {
             for (Package ps : p) {
-                ps.setStatus("Weighn't yet");
+                ps.setStatus("Chưa cân");
                 packageRepository.save(ps);
             }
-            Package plast = p.getLast();
-            plast.setStatus("Scanning");
-            packageRepository.save(plast);
         }
         Package plast = p.getLast();
-        plast.setStatus("Wait delivery");
+        plast.setStatus("Chờ vận chuyển");
         plast.setCapacity(weighRequest.getWeight());
         packageRepository.save(plast);
         warehouse.setCurrent_capacity(warehouse.getCurrent_capacity() + weighRequest.getWeight());

@@ -2,6 +2,7 @@ package com.example.tea_leaves_project.config;
 
 import com.example.tea_leaves_project.Payload.Response.QrResponse;
 import com.example.tea_leaves_project.Service.helper.QRServiceHelper;
+import com.example.tea_leaves_project.Service.imp.WarehouseServiceImp;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +45,8 @@ public class MqttConfig {
 //    }
     @Autowired
     QRServiceHelper qrServiceHelper;
+    @Autowired
+    WarehouseServiceImp warehouseServiceImp;
     @Bean
     public MessageChannel mqttInputChannel() {
         return new DirectChannel();
@@ -68,7 +71,8 @@ public class MqttConfig {
                 new MqttPahoMessageDrivenChannelAdapter(
                         "myclient",
                         mqttPahoClientFactory(),
-                        "esp32/data");
+                        "esp32/data",
+                        "esp32_1/data");
         adapter.setCompletionTimeout(5000);
         adapter.setConverter(new DefaultPahoMessageConverter());
         adapter.setQos(0);
@@ -95,7 +99,7 @@ public class MqttConfig {
                     // Lấy giá trị của qr_code
                     String qrCode = jsonNode.get("qr_code").asText();
                     log.info("QR Code: " + qrCode);
-                    qrServiceHelper.unpack(qrCode, qrResponse);
+                    warehouseServiceImp.scanQrCode(qrCode);
                 } catch (Exception e) {
                     log.error("Lỗi scan qrcode " + e.getMessage());
                 }

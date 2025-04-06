@@ -51,7 +51,7 @@ public class QRServiceHelper {
                 .createdtime(timestamp)
                 .typetea(typeTea)
                 .util("Kg")
-                .status("Weighn't yet")
+                .status("Chưa cân")
                 .build();
         Package pack = packageRepository.save(p);
 
